@@ -10,6 +10,14 @@ let creator = false;
 let rtcPeerConnection;
 let userStream;
 
+let divButtonGroup = document.getElementById("btn-group");
+let muteButton = document.getElementById("muteButton");
+let hideCameraButton = document.getElementById("hideCameraButton");
+let leaveRoomButton = document.getElementById("leaveRoomButton");
+
+let muteFlag = false;
+let hideCameraFlag = false;
+
 // Contains the stun server URL we will be using.
 let iceServers = {
   iceServers: [
@@ -27,6 +35,28 @@ joinButton.addEventListener("click", function () {
   }
 });
 
+muteButton.addEventListener("click", function () {
+  muteFlag = !muteFlag
+  if(muteFlag){
+    muteButton.textContent = "Unmute";
+    userStream.getTracks()[0].enabled = false;
+  } else{
+    userStream.getTracks()[0].enabled = true;
+    muteButton.textContent = "Mute";
+  }
+});
+
+hideCameraButton.addEventListener("click", function () {
+  hideCameraFlag = !hideCameraFlag
+  if(hideCameraFlag){
+    userStream.getTracks()[1].enabled = false;
+    hideCameraButton.textContent = "Show Camera";
+  } else{
+    userStream.getTracks()[1].enabled = true;
+    hideCameraButton.textContent = "Hide Camera";
+  }
+});
+
 // Triggered when a room is succesfully created.
 
 socket.on("created", function () {
@@ -41,6 +71,7 @@ socket.on("created", function () {
       /* use the stream */
       userStream = stream;
       divVideoChatLobby.style = "display:none";
+      divButtonGroup.style = "display:flex"
       userVideo.srcObject = stream;
       userVideo.onloadedmetadata = function (e) {
         userVideo.play();
@@ -66,6 +97,7 @@ socket.on("joined", function () {
       /* use the stream */
       userStream = stream;
       divVideoChatLobby.style = "display:none";
+      divButtonGroup.style = "display:flex"
       userVideo.srcObject = stream;
       userVideo.onloadedmetadata = function (e) {
         userVideo.play();
