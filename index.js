@@ -63,4 +63,11 @@ io.on("connection", function (socket) {
   socket.on("answer", function (answer, roomName) {
     socket.broadcast.to(roomName).emit("answer", answer); //Sends Answer to the other peer in the room.
   });
+
+  socket.on("leave", function (answer, roomName) {
+    socket.leave(roomName)
+    socket.broadcast.to(roomName).emit("leave", answer);
+  });
+
+
 });

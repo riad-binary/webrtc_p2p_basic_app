@@ -57,6 +57,31 @@ hideCameraButton.addEventListener("click", function () {
   }
 });
 
+leaveRoomButton.addEventListener("click", function () {
+  socket.emit("leave", roomName);
+  divVideoChatLobby.style = "display:block";
+  divButtonGroup.style = "display:none"
+
+  if(userVideo.srcObject){
+    userVideo.srcObject.getTracks()[0].stop();
+    userVideo.srcObject.getTracks()[1].stop();
+  }
+
+  if(peerVideo.srcObject){
+    peerVideo.srcObject.getTracks()[0].stop();
+    peerVideo.srcObject.getTracks()[1].stop();
+  }
+
+  if(rtcPeerConnection){
+    rtcPeerConnection.ontrack = null;
+    rtcPeerConnection.onicecandidate = null;
+    rtcPeerConnection.close();
+    rtcPeerConnection = null;
+  }
+
+});
+
+
 // Triggered when a room is succesfully created.
 
 socket.on("created", function () {
@@ -195,3 +220,19 @@ function OnTrackFunction(event) {
     peerVideo.play();
   };
 }
+
+socket.on("leave", function () {
+  creator = true;
+  if(peerVideo.srcObject){
+    peerVideo.srcObject.getTracks()[0].stop();
+    peerVideo.srcObject.getTracks()[1].stop();
+  }
+
+  if(rtcPeerConnection){
+    rtcPeerConnection.ontrack = null;
+    rtcPeerConnection.onicecandidate = null;
+    rtcPeerConnection.close();
+    rtcPeerConnection = null;
+  }
+    
+});
