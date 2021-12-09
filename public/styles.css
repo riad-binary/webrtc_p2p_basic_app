@@ -64,32 +64,28 @@ input {
   width: 100%;
 }
 
-#video-chat-room{
-  display: flex;
-}
-
-#user-video{
-  flex: 1;
-  margin: 10px;
-  max-height: 20%;
-  max-width: 20%;
-}
-
-#peer-video{
-  flex: 1;
-  margin: 10px;
-  max-height: 40%;
-  max-width: 40%;
-}
-
-.btn-group{
+#video-chat-room {
   display: flex;
   justify-content: center;
 }
 
+#btn-group {
+  display: flex;
+  justify-content: center;
+}
+
+#user-video {
+  padding: 20px;
+}
+
+#peer-video {
+  padding: 20px;
+}
+
 .btn-group button {
-  background: #141414;
-  color: #fff;
+  background-color: #141414; /* Green background */
+  border: 1px solid white; /* Green border */
+  color: white; /* White text */
   padding: 10px 24px; /* Some padding */
   cursor: pointer; /* Pointer/hand icon */
   float: left; /* Float the buttons side by side */
@@ -108,6 +104,5 @@ input {
 
 /* Add a background color on hover */
 .btn-group button:hover {
-  background-color: #5a5858;
+  background-color: #000000;
 }
-

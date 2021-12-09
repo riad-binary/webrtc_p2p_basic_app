@@ -1,4 +1,4 @@
-let socket = io.connect("http://localhost:4000");
+let socket = io();
 let divVideoChatLobby = document.getElementById("video-chat-lobby");
 let divVideoChat = document.getElementById("video-chat-room");
 let joinButton = document.getElementById("join");
@@ -36,51 +36,50 @@ joinButton.addEventListener("click", function () {
 });
 
 muteButton.addEventListener("click", function () {
-  muteFlag = !muteFlag
-  if(muteFlag){
-    muteButton.textContent = "Unmute";
+  muteFlag = !muteFlag;
+  if (muteFlag) {
     userStream.getTracks()[0].enabled = false;
-  } else{
+    muteButton.textContent = "Unmute";
+  } else {
     userStream.getTracks()[0].enabled = true;
     muteButton.textContent = "Mute";
   }
 });
 
 hideCameraButton.addEventListener("click", function () {
-  hideCameraFlag = !hideCameraFlag
-  if(hideCameraFlag){
+  hideCameraFlag = !hideCameraFlag;
+  if (hideCameraFlag) {
     userStream.getTracks()[1].enabled = false;
     hideCameraButton.textContent = "Show Camera";
-  } else{
+  } else {
     userStream.getTracks()[1].enabled = true;
     hideCameraButton.textContent = "Hide Camera";
   }
 });
 
 leaveRoomButton.addEventListener("click", function () {
-  socket.emit("leave", roomName);
-  divVideoChatLobby.style = "display:block";
-  divButtonGroup.style = "display:none"
+  socket.emit("leave", roomName); //Let's the server know that user has left the room.
 
-  if(userVideo.srcObject){
-    userVideo.srcObject.getTracks()[0].stop();
-    userVideo.srcObject.getTracks()[1].stop();
+  divVideoChatLobby.style = "display:block"; //Brings back the Lobby UI
+  divButtonGroup.style = "display:none";
+
+  if (userVideo.srcObject) {
+    userVideo.srcObject.getTracks()[0].stop(); //Stops receiving audio track of User.
+    userVideo.srcObject.getTracks()[1].stop(); //Stops receiving the Video track of User
+  }
+  if (peerVideo.srcObject) {
+    peerVideo.srcObject.getTracks()[0].stop(); //Stops receiving audio track of Peer.
+    peerVideo.srcObject.getTracks()[1].stop(); //Stops receiving the Video track of Peer.
   }
 
-  if(peerVideo.srcObject){
-    peerVideo.srcObject.getTracks()[0].stop();
-    peerVideo.srcObject.getTracks()[1].stop();
-  }
-
-  if(rtcPeerConnection){
+  //Checks if there is peer on the other side and safely closes the existing connection established with the peer.
+  if (rtcPeerConnection) {
     rtcPeerConnection.ontrack = null;
     rtcPeerConnection.onicecandidate = null;
     rtcPeerConnection.close();
     rtcPeerConnection = null;
   }
-
 });
-
 
 // Triggered when a room is succesfully created.
 
@@ -96,7 +95,7 @@ socket.on("created", function () {
       /* use the stream */
       userStream = stream;
       divVideoChatLobby.style = "display:none";
-      divButtonGroup.style = "display:flex"
+      divButtonGroup.style = "display:flex";
       userVideo.srcObject = stream;
       userVideo.onloadedmetadata = function (e) {
         userVideo.play();
@@ -122,7 +121,7 @@ socket.on("joined", function () {
       /* use the stream */
       userStream = stream;
       divVideoChatLobby.style = "display:none";
-      divButtonGroup.style = "display:flex"
+      divButtonGroup.style = "display:flex";
       userVideo.srcObject = stream;
       userVideo.onloadedmetadata = function (e) {
         userVideo.play();
@@ -144,14 +143,14 @@ socket.on("full", function () {
 // Triggered when a peer has joined the room and ready to communicate.
 
 socket.on("ready", function () {
-  console.log("chat.js creator:" + creator);
-
   if (creator) {
     rtcPeerConnection = new RTCPeerConnection(iceServers);
     rtcPeerConnection.onicecandidate = OnIceCandidateFunction;
     rtcPeerConnection.ontrack = OnTrackFunction;
     rtcPeerConnection.addTrack(userStream.getTracks()[0], userStream);
     rtcPeerConnection.addTrack(userStream.getTracks()[1], userStream);
+
+
     rtcPeerConnection
       .createOffer()
       .then((offer) => {
@@ -168,7 +167,6 @@ socket.on("ready", function () {
 // Triggered on receiving an ice candidate from the peer.
 
 socket.on("candidate", function (candidate) {
-  console.log("chat.js candidate:" + creator);
   let icecandidate = new RTCIceCandidate(candidate);
   rtcPeerConnection.addIceCandidate(icecandidate);
 });
@@ -176,7 +174,6 @@ socket.on("candidate", function (candidate) {
 // Triggered on receiving an offer from the person who created the room.
 
 socket.on("offer", function (offer) {
-  console.log("chat.js offer:" + creator);
   if (!creator) {
     rtcPeerConnection = new RTCPeerConnection(iceServers);
     rtcPeerConnection.onicecandidate = OnIceCandidateFunction;
@@ -184,6 +181,7 @@ socket.on("offer", function (offer) {
     rtcPeerConnection.addTrack(userStream.getTracks()[0], userStream);
     rtcPeerConnection.addTrack(userStream.getTracks()[1], userStream);
     rtcPeerConnection.setRemoteDescription(offer);
+
     rtcPeerConnection
       .createAnswer()
       .then((answer) => {
@@ -199,14 +197,35 @@ socket.on("offer", function (offer) {
 // Triggered on receiving an answer from the person who joined the room.
 
 socket.on("answer", function (answer) {
-  console.log("chat.js answer:" + creator);
+  console.log("chat answer");
   rtcPeerConnection.setRemoteDescription(answer);
+});
+
+// Triggered when the other peer in the room has left the room.
+
+socket.on("leave", function () {
+
+  console.log("chat leave");
+  creator = true; //This person is now the creator because they are the only person in the room.
+  if (peerVideo.srcObject) {
+    peerVideo.srcObject.getTracks()[0].stop(); //Stops receiving audio track of Peer.
+    peerVideo.srcObject.getTracks()[1].stop(); //Stops receiving video track of Peer.
+  }
+
+  //Safely closes the existing connection established with the peer who left.
+
+  if (rtcPeerConnection) {
+    rtcPeerConnection.ontrack = null;
+    rtcPeerConnection.onicecandidate = null;
+    rtcPeerConnection.close();
+    rtcPeerConnection = null;
+  }
 });
 
 // Implementing the OnIceCandidateFunction which is part of the RTCPeerConnection Interface.
 
 function OnIceCandidateFunction(event) {
-  // console.log("Candidate");
+  console.log("Candidate");
   if (event.candidate) {
     socket.emit("candidate", event.candidate, roomName);
   }
@@ -220,19 +239,3 @@ function OnTrackFunction(event) {
     peerVideo.play();
   };
 }
-
-socket.on("leave", function () {
-  creator = true;
-  if(peerVideo.srcObject){
-    peerVideo.srcObject.getTracks()[0].stop();
-    peerVideo.srcObject.getTracks()[1].stop();
-  }
-
-  if(rtcPeerConnection){
-    rtcPeerConnection.ontrack = null;
-    rtcPeerConnection.onicecandidate = null;
-    rtcPeerConnection.close();
-    rtcPeerConnection = null;
-  }
-    
-});

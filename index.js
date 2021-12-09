@@ -64,10 +64,12 @@ io.on("connection", function (socket) {
     socket.broadcast.to(roomName).emit("answer", answer); //Sends Answer to the other peer in the room.
   });
 
-  socket.on("leave", function (answer, roomName) {
-    socket.leave(roomName)
-    socket.broadcast.to(roomName).emit("leave", answer);
-  });
+  //Triggered when peer leaves the room.
 
+  socket.on("leave", function (roomName) {
+    console.log("index leave");
+    socket.leave(roomName);
+    socket.broadcast.to(roomName).emit("leave");
+  });
 
 });
